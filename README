@@ -1,0 +1,13 @@
+There're a lot of line-based formats in bioinformatics which can be described
+with some regular language. You can parse them with regular expressions from
+your favourite dynamic language but that's not effective. Ragel takes a formal
+grammar of the language, makes state machine for you, and allows you to
+insert actions (snippets of code in C/C++, Objective C, Java, Ruby, D, or Go) in 
+state transitions. 
+
+How to use: 
+    * install Ragel if you haven't done it yet
+    * copy file with grammar description for your format
+    * modify it: add some actions (read Ragel User Guide to learn how to do it)
+    * produce source code
+    * enjoy its performance and robustness ;-)
