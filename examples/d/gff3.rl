@@ -26,7 +26,9 @@
 
     commentline = '#' | '#' [^#] [^\n]* ;
 
-    seqid = ([a-zA-Z0-9.:^*$@!+_?-|]+) ;
+    escapedcharacter = '%' [A-F0-9]{2} ;
+    seqidcharacter = [a-zA-Z0-9.:^*$@!+_?-|] | escapedcharacter ;
+    seqid = seqidcharacter+ ;
     source = [^\t\n]+ ;
 
     sofaterm = [^\t\n]+ ;
@@ -34,8 +36,8 @@
     accessionnumber = "SO:" digit+ ;
     type = (sofaterm | fullsoterm | accessionnumber) > start_type % end_type ;
 
-    start = [1-9] digit* ;
-    end = [1-9] digit* ;
+    start = '.' | ([1-9] digit*) ;
+    end = '.' | ([1-9] digit*) ;
 
     sign = [\-+]? ;
     floatnumber = sign? digit* '.'? digit+ ([eE] sign? digit+)? ;
@@ -53,11 +55,15 @@
     usertag = lower [^,=;\t\n]* ;
     tag = predefinedtag | reservedtag | usertag;
 
-    value = [^,=;\t\n]+ ;
+    emptyvalue = "" ;
+    value = [^,=;\t\n]+ | emptyvalue ;
     values = value (',' value)* ;
     tagvaluepair = tag '=' values ;
-    semicolon = ';' ' '+ ;
-    attributes = (tagvaluepair (semicolon tagvaluepair)*)? ;
+    semicolon = ';' ' '* ;
+
+    nonconformantstuff = [\t;,]+ ;
+
+    attributes = '.' | (tagvaluepair (semicolon tagvaluepair)* nonconformantstuff?) ;
 
     recordline = seqid '\t' 
                  source '\t' 
@@ -70,7 +76,14 @@
                  attributes ;
 
     line = pragmaline | commentline | recordline | "" ;
-    gff3 := (line (newline line)*)? ; # TODO: make machine for fasta and add here
+
+    description = '>'[^ \n][^\n]* ;
+    fastaline = [^>\n]+ ;
+    data = fastaline (newline fastaline)* ;
+    fastasequence = description newline data ;
+    fasta = "##FASTA" newline fastasequence (newline fastasequence)* ;
+
+    gff3 := (line (newline line)*)? fasta? newline* ;
 
     write data;
 }%%
@@ -100,6 +113,10 @@ void process(string data) {
         
     %%write init;
     %%write exec;
+   
+    writeln(cs);
+    writeln(lineno);
+    writeln(p - data.ptr);
 
     foreach (type, num; types) {
         writeln(type, " (", num, ")");
